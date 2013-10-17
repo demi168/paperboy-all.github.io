@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+
+    <!-- Always force latest IE rendering engine or request Chrome Frame -->
+    <meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+
+    <!-- Use title if it's in the page YAML frontmatter -->
+    <title>Puppetマニフェストスタイルガイド</title>
+
+    <link href="/stylesheets/normalize.css" media="screen" rel="stylesheet" type="text/css" />
+<link href="/stylesheets/all.css" media="screen" rel="stylesheet" type="text/css" />
+<link href="/stylesheets/syntax.css" media="screen" rel="stylesheet" type="text/css" />
+    <script src="/javascripts/all.js" type="text/javascript"></script>
+    <link href='http://fonts.googleapis.com/css?family=Ledger' rel='stylesheet' type='text/css'>
+  </head>
+
+  <body class="docs docs_puppet docs_puppet_style-guide">
+    <div id="wrapper">
+      <h1>manifestコーディング規約</h1>
+
+<p>manifestのコーディング規約を決めとこう。</p>
+
+<p>基本的には本家のここに従う。<a href="http://docs.puppetlabs.com/guides/style_guide.html">Style Guide</a></p>
+
+<p>いくつか気になるのをピックアップすると。</p>
+
+<ul>
+<li>リソースパラメータのデフォルト値はトップレベルスコープにしか置かない(各クラス内で設定しない)。</li>
+</ul>
+
+<blockquote>
+<p>9.7. Resource Defaults</p>
+
+<p>Resource defaults should be used in a very controlled manner, and should only be declared at the edges of your manifest ecosystem. Specifically, they may be declared:</p>
+
+<p>At top scope in site.pp
+       In a class which is guaranteed to never declare another class and never be inherited by another class.</p>
+<pre class="highlight text">   This is due to the way resource defaults propagate through dynamic scope, which can have unpredictable effects far away from where the default was declared.
+</pre></blockquote>
+
+<ul>
+<li>トップレベルの変数をmodule内で使うときは$::をつける</li>
+</ul>
+
+<blockquote>
+<p>11.6. Namespacing Variables</p>
+
+<p>When using top-scope variables, including facts, Puppet modules should explicitly specify the empty namespace (i.e., $::operatingsystem, not $operatingsystem) to prevent accidental scoping issues.</p>
+</blockquote>
+
+<ul>
+<li>変数にハイフンを使わない</li>
+</ul>
+
+<blockquote>
+<p>11.7. Variable format</p>
+
+<p>When defining variables you should only use letters, numbers and underscores. You should specifically not make use of dashes.</p>
+</blockquote>
+
+<ul>
+<li>classのネストや、class内でのdefined resource定義をしない</li>
+</ul>
+
+<blockquote>
+<p>11.4. Classes and Defined Resource Types Within Classes</p>
+
+<p>Classes and defined resource types must not be defined within other classes.</p>
+</blockquote>
+
+<hr>
+
+<h2>ペパボ独自規約</h2>
+
+<h3>modeのクオート</h3>
+
+<p>本家では、ファイルのmodeも 「4桁でクオートすれ」ってあるけど、なんとなく気に食わないので、</p>
+<pre class="highlight puppet"><span class="c"># 3桁でクオート無し
+</span><span class="py">mode</span> <span class="p">=&gt;</span> <span class="m">644</span>
+</pre>
+<p>を基本とします。</p>
+
+<h3>パラメータ引数とリソース名のクオート</h3>
+
+<p>本家では、「変数使うときはダブル、じゃないときはシングル」ってあるけど、エディタでみたときにシンタックスカラーがごっちゃりして解りにくいので、こうします。</p>
+<pre class="highlight puppet"><span class="c"># リソースネームはシングル(変数あるときはダブル)、他は変数含もうが含むまいが全部ダブル。
+</span><span class="n">file</span> <span class="p">{</span> <span class="s1">&#39;//foo/baa&#39;</span><span class="p">:</span>
+  <span class="py">source</span> <span class="p">=&gt;</span> <span class="s2">&quot;puppet:///foo/baa&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre>
+<h3>予約語となっているパラメータ引数はクオートしない</h3>
+
+<p><strong>Good:</strong></p>
+<pre class="highlight puppet"><span class="n">file</span> <span class="p">{</span> <span class="s1">&#39;/tmp&#39;</span><span class="p">:</span>
+  <span class="py">ensure</span> <span class="p">=&gt;</span> <span class="n">directory</span><span class="p">,</span>
+<span class="p">}</span>
+</pre>
+<p><strong>Bad:</strong></p>
+<pre class="highlight puppet"><span class="n">file</span> <span class="p">{</span> <span class="s1">&#39;/tmp&#39;</span><span class="p">:</span>
+  <span class="py">ensure</span> <span class="p">=&gt;</span> <span class="s2">&quot;directory&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+</pre>
+<h3>同一タイプリソースの間に空行</h3>
+
+<p>パラメータが多いと、複数並んだ時に見づらいため、一行空けます。</p>
+<pre class="highlight puppet"><span class="n">file</span> <span class="p">{</span>
+  <span class="s1">&#39;/foo/baa&#39;</span><span class="p">:</span>
+    <span class="py">source</span>  <span class="p">=&gt;</span> <span class="s2">&quot;puppet///foo/baa&quot;</span><span class="p">,</span>
+    <span class="py">mode</span>    <span class="p">=&gt;</span> <span class="m">644</span><span class="p">,</span>
+    <span class="kp">require</span> <span class="p">=&gt;</span> <span class="nc">File</span><span class="p">[</span><span class="s1">&#39;/foo&#39;</span><span class="p">];</span>
+
+  <span class="s1">&#39;/aaa/bbb&#39;</span><span class="p">:</span>
+    <span class="py">content</span> <span class="p">=&gt;</span> <span class="nf">template</span><span class="p">(</span><span class="s2">&quot;aaa/bbb&quot;</span><span class="p">),</span>
+    <span class="py">mode</span>    <span class="p">=&gt;</span> <span class="m">755</span><span class="p">;</span>
+<span class="p">}</span>
+</pre>
+<h3>複数requireで改行</h3>
+
+<p>横に並べるとあとから編集しにくいので改行いれる。</p>
+<pre class="highlight puppet"><span class="n">sevice</span> <span class="p">{</span> <span class="s1">&#39;mydaemon&#39;</span><span class="p">:</span>
+  <span class="py">ensure</span>  <span class="p">=&gt;</span> <span class="n">running</span><span class="p">,</span>
+  <span class="kp">require</span> <span class="p">=&gt;</span> <span class="p">[</span>
+    <span class="nc">Package</span><span class="p">[</span><span class="s1">&#39;mydaemon&#39;</span><span class="p">],</span>
+    <span class="nc">File</span><span class="p">[</span><span class="s1">&#39;mydaemon.conf&#39;</span><span class="p">],</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre>
+<h3>include は1つずつ</h3>
+
+<p>横に並べない。includeの順はそれなりに処理順でもあるので、横並びだと、順番を変えたい時に編集がめんどうです。</p>
+<pre class="highlight puppet"><span class="c"># これダメ
+</span><span class="k">include</span> <span class="nc">base</span><span class="p">,</span> <span class="n">base::config</span><span class="p">,</span> <span class="n">base::packages</span>
+<span class="c"># こう
+</span><span class="k">include</span> <span class="nc">base</span>
+<span class="k">include</span> <span class="nc">base::config</span>
+<span class="k">include</span> <span class="nc">base::packages</span>
+</pre>
+<h3>Relationship Declarationsのインデント</h3>
+
+<p>縦方向に整列することで読みやすくする。</p>
+
+<p><strong>Good:</strong></p>
+<pre class="highlight puppet">   <span class="nc">Class</span><span class="p">[</span><span class="s1">&#39;hoge&#39;</span><span class="p">]</span>
+<span class="p">-&gt;</span> <span class="nc">Class</span><span class="p">[</span><span class="s1">&#39;hoge::install&#39;</span><span class="p">]</span>
+</pre>
+<p><strong>Bad:</strong></p>
+<pre class="highlight puppet"><span class="nc">Class</span><span class="p">[</span><span class="s1">&#39;hoge&#39;</span><span class="p">]</span>
+<span class="p">-&gt;</span> <span class="nc">Class</span><span class="p">[</span><span class="s1">&#39;hoge::install&#39;</span><span class="p">]</span>
+</pre>
+    </div>
+  </body>
+</html>
